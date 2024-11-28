@@ -3,7 +3,7 @@ import { and, desc } from 'drizzle-orm/expressions';
 
 import { serverDB } from '@/database/server';
 
-import { NewSessionGroup, UserItem, sessionGroups } from '../schemas/lobechat';
+import { NewSessionGroup, SessionGroupItem, sessionGroups } from '../schemas/lobechat';
 
 export class TemplateModel {
   private userId: string;
@@ -13,13 +13,22 @@ export class TemplateModel {
   }
 
   create = async (params: NewSessionGroup) => {
-    return serverDB.insert(sessionGroups).values({ ...params, userId: this.userId });
+    const [result] = await serverDB
+      .insert(sessionGroups)
+      .values({ ...params, userId: this.userId })
+      .returning();
+
+    return result;
   };
 
   delete = async (id: string) => {
     return serverDB
       .delete(sessionGroups)
       .where(and(eq(sessionGroups.id, id), eq(sessionGroups.userId, this.userId)));
+  };
+
+  deleteAll = async () => {
+    return serverDB.delete(sessionGroups).where(eq(sessionGroups.userId, this.userId));
   };
 
   query = async () => {
@@ -35,7 +44,7 @@ export class TemplateModel {
     });
   };
 
-  async update(id: string, value: Partial<UserItem>) {
+  async update(id: string, value: Partial<SessionGroupItem>) {
     return serverDB
       .update(sessionGroups)
       .set({ ...value, updatedAt: new Date() })
